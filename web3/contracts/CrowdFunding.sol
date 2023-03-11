@@ -47,4 +47,44 @@ contract CrowdFunding {
         // index of the campaign
         return numberOfCampaigns - 1;
     }
+
+    // payable signifies that we are going to send some cryptocurrency with the function call
+    function donateToCampaign(uint256 _id) public payable {
+        // this is what we are trying to send from out front end
+        uint256 amount = msg.value;
+
+        Campaign storage campaign = campaigns[_id];
+
+        // we want to push the address of the person who is donating to the donators array
+        campaign.donators.push(msg.sender);
+        // we want to push the amount of the donation to the donationsAmount array
+        campaign.donationsAmount.push(amount);
+
+        (bool sent, ) = payable(campaign.owner).call{value: amount}("");
+
+        if (sent) {
+            campaign.amountCollected = campaign.amountCollected + amount;
+        }
+    }
+
+    // view means it's only going to read data from the blockchain
+    function getDonators(
+        uint256 _id
+    ) public view returns (address[] memory, uint256[] memory) {
+        // we are returning two arrays which are the donators and the donationsAmount
+        return (campaigns[_id].donators, campaigns[_id].donationsAmount);
+    }
+
+    function getCampaigns() public view returns (Campaign[] memory) {
+        // we are returning an array of campaigns
+        Campaign[] memory allCampaigns = new Campaign[](numberOfCampaigns);
+
+        // we are looping through the campaigns and storing them in the allCampaigns array
+        for (uint256 i = 0; i < numberOfCampaigns; i++) {
+            Campaign storage item = campaigns[i];
+
+            allCampaigns[i] = item;
+        }
+        return allCampaigns;
+    }
 }
